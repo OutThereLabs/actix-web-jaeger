@@ -1,0 +1,12 @@
+[package]
+name = "actix-web-jaeger"
+version = "0.1.0"
+authors = ["Patrick Tescher <patrick@outtherelabs.com>"]
+
+[dependencies]
+actix-web = "0.7"
+actix-web-opentracing = { path = "../actix-web-opentracing" }
+opentracing-rust-wip = { path = "../opentracing-rust-wip" }
+env_logger = "0.6.0"
+jaeger-client-rust = { path = "../jaeger-client-rust" }
+log = "0.4.6"

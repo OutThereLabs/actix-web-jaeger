@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/actix-web-jaeger" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/actix-web-opentracing" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/jaeger-client-rust" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/jaeger-idl" vcs="Git" />
+  </component>
+</project>

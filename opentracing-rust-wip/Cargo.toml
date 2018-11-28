@@ -1,0 +1,7 @@
+[package]
+name = "opentracing-rust-wip"
+version = "0.1.0"
+authors = ["Patrick Tescher <patrick@outtherelabs.com>"]
+
+[dependencies]
+opentracing-api = {git = "https://github.com/opentracing/opentracing-rust"}

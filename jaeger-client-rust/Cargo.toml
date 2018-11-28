@@ -1,0 +1,13 @@
+[package]
+name = "jaeger-client-rust"
+version = "0.1.0"
+authors = ["Patrick Tescher <patrick@outtherelabs.com>"]
+
+[dependencies]
+env_logger = "0.6.0"
+jaeger-thrift = { path = "../jaeger-thrift"}
+log = "0.4.6"
+opentracing-api = {git = "https://github.com/opentracing/opentracing-rust"}
+opentracing-rust-wip = { path = "../opentracing-rust-wip" }
+rand = "^0"
+thrift = "0.0.4"

@@ -1,0 +1,9 @@
+[package]
+name = "jaeger-thrift"
+version = "0.1.0"
+authors = ["Patrick Tescher <patrick@outtherelabs.com>"]
+
+[dependencies]
+ordered-float = "0.5"
+thrift = "0.0.4"
+try_from = "0.3.2"
