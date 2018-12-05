@@ -9,16 +9,13 @@ mod tests {
     use actix_web::test::TestServer;
     use actix_web::*;
     use actix_web_opentracing::*;
-    use jaeger_client_rust::{Span as JaegerSpan, Tracer as JaegerTracer};
+    use jaeger_client_rust::Tracer as JaegerTracer;
     use opentracing_rust_wip::*;
 
     fn index(req: &HttpRequest) -> HttpResponse {
-        let extensions = req.extensions();
-        let span = extensions.get::<JaegerSpan>();
-        let context = span.map(|span| span.context());
-
-        if let Some(tracer) = http_request_tracer_from::<JaegerTracer, ()>(req) {
-            let mut child_span = tracer.start_span("Test Child Span".into(), context);
+        if let Some(mut child_span) =
+            start_child_span::<JaegerTracer, ()>(req, "Test Child Span".to_owned())
+        {
             child_span.set_tag(
                 Tags::SpanKind.as_str().to_owned(),
                 TagValue::String(Tags::SpanKindClient.as_str().to_owned()),

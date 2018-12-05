@@ -25,6 +25,23 @@ pub fn http_request_tracer_from<T: Tracer<'static> + 'static, S: 'static>(req: &
     extensions.get::<MiddlewareTracer<'static, T>>().and_then(|this| this.tracer())
 }
 
+pub fn start_child_span<T, S>(req: &HttpRequest<S>, operation_name: String) -> Option<T::Span>
+where
+    T: Tracer<'static> + 'static,
+    S: 'static,
+{
+    let extensions = req.extensions();
+    let span = extensions.get::<T::Span>();
+    let context = span.map(|span| span.context());
+
+    if let Some(tracer) = http_request_tracer_from::<T, S>(req) {
+        let span = tracer.start_span(operation_name, context);
+        Some(span)
+    } else {
+        None
+    }
+}
+
 pub struct MiddlewareTracer<'a, T: Tracer<'a>> {
     tracer: Weak<T>,
     _a: PhantomData<&'a ()>,
