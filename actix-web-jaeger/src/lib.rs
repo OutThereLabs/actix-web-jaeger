@@ -47,7 +47,7 @@ mod tests {
     }
 
     #[test]
-    fn text_extractor() {
+    fn test() {
         env_logger::init();
 
         let mut srv = TestServer::with_factory(|| {
