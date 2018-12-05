@@ -6,9 +6,9 @@ use std::borrow::Borrow;
 use std::boxed::Box;
 use std::collections::hash_map::Iter as HashMapIter;
 use std::collections::HashMap;
+use std::io;
 use std::num::ParseIntError;
 use std::rc::{Rc, Weak};
-use std::io;
 use tracer::Tracer;
 
 use reporter::RemoteReporter;
@@ -46,20 +46,19 @@ impl SpanContext {
     fn get_u64_baggage_item(&self, key: &str) -> Option<u64> {
         let key_string = key.to_string();
 
-        self.baggage.get(&key_string).and_then(|value| {
-                match Self::convert_hex_to_u64(value) {
-                    Ok(result) => Some(result),
-                    Err(error) => {
-                        trace!("Got an error extracting {}: {}", key, error);
-                        None
-                    },
+        self.baggage
+            .get(&key_string)
+            .and_then(|value| match Self::convert_hex_to_u64(value) {
+                Ok(result) => Some(result),
+                Err(error) => {
+                    trace!("Got an error extracting {}: {}", key, error);
+                    None
                 }
             })
     }
 
     pub fn trace_id(&self) -> Option<u64> {
         self.get_u64_baggage_item("x-b3-traceid")
-
     }
 
     pub fn set_trace_id(&mut self, value: u64) {
@@ -73,7 +72,6 @@ impl SpanContext {
 
     pub fn span_id(&self) -> Option<u64> {
         self.get_u64_baggage_item("x-b3-spanid")
-
     }
 
     pub fn set_span_id(&mut self, value: u64) {
@@ -102,7 +100,11 @@ impl SpanContext {
         let mut child = Self::new();
 
         if let Some(parent) = parent {
-            trace!("Creating child {:x} of parent {:x}", child.span_id().unwrap_or(0), parent.span_id().unwrap_or(0));
+            trace!(
+                "Creating child {:x} of parent {:x}",
+                child.span_id().unwrap_or(0),
+                parent.span_id().unwrap_or(0)
+            );
 
             if let Some(trace_id) = parent.trace_id() {
                 child.set_trace_id(trace_id.clone());

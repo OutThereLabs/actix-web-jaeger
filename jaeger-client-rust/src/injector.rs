@@ -1,8 +1,8 @@
 use opentracing_api::SpanContext as OpentraingSpanContext;
-use std::collections::HashMap;
 use span::SpanContext;
+use std::collections::HashMap;
 
-pub struct Injector{}
+pub struct Injector {}
 
 impl Injector {
     pub fn inject(span_context: &SpanContext, carrier: &mut HashMap<String, String>) {

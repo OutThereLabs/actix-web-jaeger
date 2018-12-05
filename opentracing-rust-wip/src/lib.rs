@@ -5,7 +5,7 @@ mod span;
 mod tag;
 mod tracer;
 
-pub use reporter::Reporter;
-pub use span::{FinishedSpan, Span};
-pub use tag::TagValue;
-pub use tracer::Tracer;
+pub use reporter::*;
+pub use span::*;
+pub use tag::*;
+pub use tracer::*;

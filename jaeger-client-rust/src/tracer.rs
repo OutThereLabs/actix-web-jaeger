@@ -19,9 +19,9 @@ pub struct Tracer {
 }
 
 impl Tracer {
-    pub fn new(service_name: String) -> Self {
+    pub fn default() -> Self {
         return Tracer {
-            reporter: Rc::new(RemoteReporter::new(service_name, None)),
+            reporter: Rc::new(RemoteReporter::default()),
         };
     }
 
@@ -69,7 +69,12 @@ impl<'a> OpentracingTracer<'a> for Tracer {
         span
     }
 
-    fn inject(&self, span_context: &Self::SpanContext, format: &str, carrier: &mut Self::Carrier) -> Result<(), Self::Error> {
+    fn inject(
+        &self,
+        span_context: &Self::SpanContext,
+        format: &str,
+        carrier: &mut Self::Carrier,
+    ) -> Result<(), Self::Error> {
         match format {
             //TODO: Multiple injectors based on format/carrier
             _ => Ok(Injector::inject(span_context, carrier)),

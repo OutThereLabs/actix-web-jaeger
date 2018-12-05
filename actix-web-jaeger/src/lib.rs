@@ -10,7 +10,7 @@ mod tests {
     use actix_web::*;
     use actix_web_opentracing::*;
     use jaeger_client_rust::{Span as JaegerSpan, Tracer as JaegerTracer};
-    use opentracing_rust_wip::{Span, TagValue, Tracer};
+    use opentracing_rust_wip::*;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     pub fn timestamp() -> u64 {
@@ -36,8 +36,8 @@ mod tests {
             let mut child_span = tracer.start_span("Test Child Span".into(), context);
 
             child_span.set_tag(
-                String::from("span.kind"),
-                TagValue::String(String::from("client")),
+                Tags::SpanKind.as_str().to_owned(),
+                TagValue::String(Tags::SpanKindClient.as_str().to_owned()),
             );
             child_span.finish_at(timestamp());
         }
@@ -51,11 +51,9 @@ mod tests {
         env_logger::init();
 
         let mut srv = TestServer::with_factory(|| {
-
             App::new()
-                .middleware(HttpRequestTracer::new(JaegerTracer::new(
-                    "text_extractor".to_string(),
-                ))).handler("/", index)
+                .middleware(HttpRequestTracer::new(JaegerTracer::default()))
+                .handler("/", index)
                 .finish()
         });
 
