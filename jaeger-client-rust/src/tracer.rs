@@ -5,6 +5,7 @@ use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use Extractor;
+use Injector;
 use RemoteReporter;
 use Span;
 use SpanContext;
@@ -68,8 +69,11 @@ impl<'a> OpentracingTracer<'a> for Tracer {
         span
     }
 
-    fn inject(&self, _span_context: &Self::SpanContext, _format: &str, _carrier: &Self::Carrier) {
-        unimplemented!("Can't inject yet...")
+    fn inject(&self, span_context: &Self::SpanContext, format: &str, carrier: &mut Self::Carrier) -> Result<(), Self::Error> {
+        match format {
+            //TODO: Multiple injectors based on format/carrier
+            _ => Ok(Injector::inject(span_context, carrier)),
+        }
     }
 
     fn extract(

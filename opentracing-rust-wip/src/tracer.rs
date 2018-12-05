@@ -21,7 +21,7 @@ pub trait Tracer<'a> {
         start_time: u64,
     ) -> Self::Span;
 
-    fn inject(&self, span_context: &Self::SpanContext, format: &str, carrier: &Self::Carrier);
+    fn inject(&self, span_context: &Self::SpanContext, format: &str, carrier: &mut Self::Carrier) -> Result<(), Self::Error>;
 
     fn extract(
         &self,
