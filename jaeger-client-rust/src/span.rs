@@ -196,11 +196,11 @@ impl<'a> OpentracingSpan<'a> for Span {
         self.tags.remove(&key.into());
     }
 
-    fn tag<S>(&self, _key: S) -> Option<&TagValue>
+    fn tag<S>(&self, key: S) -> Option<&TagValue>
     where
         S: Into<String>,
     {
-        unimplemented!()
+        self.tags.get(&key.into())
     }
 
     fn log(&mut self, event: String) {
