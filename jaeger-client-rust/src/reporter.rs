@@ -1,9 +1,9 @@
-use opentracing_rust_wip::{Reporter, TagValue};
+use opentracing_rust_wip::{Reporter, TagValue, Span as OpentracingSpan};
 use span::*;
 
 use jaeger_thrift::agent::*;
 use jaeger_thrift::jaeger::{
-    Batch, Process, Span as JaegerThriftSpan, SpanRef, SpanRefType, Tag, TagType,
+    Batch, Process, Span as JaegerThriftSpan, SpanRef, SpanRefType, Log, Tag, TagType,
 };
 use std::cell::RefCell;
 use std::env;
@@ -66,8 +66,6 @@ impl Write for TUdpChannel {
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        trace!("Writing: {:0x?}", self.buffer);
-
         if self.buffer.len() < 1 {
             return Ok(());
         }
@@ -197,6 +195,20 @@ impl<'a> Reporter<'a> for RemoteReporter {
                 }
             }).collect();
 
+        let logs: Vec<Log> = span.logs.iter().map(|(timestamp, event)|{
+            Log::new(timestamp.clone() as i64, vec![
+                Tag::new(
+                    "event".to_owned(),
+                    TagType::STRING,
+                    Some(event.clone()),
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+            ])
+        }).collect();
+
         let span = JaegerThriftSpan::new(
             trace_id_low,
             0,
@@ -215,7 +227,7 @@ impl<'a> Reporter<'a> for RemoteReporter {
             span.start_time as i64,
             span.duration as i64,
             tags,
-            None,
+            logs,
             Some(false),
         );
 

@@ -34,11 +34,11 @@ mod tests {
 
         if let Some(tracer) = http_request_tracer_from::<JaegerTracer, ()>(req) {
             let mut child_span = tracer.start_span("Test Child Span".into(), context);
-
             child_span.set_tag(
                 Tags::SpanKind.as_str().to_owned(),
                 TagValue::String(Tags::SpanKindClient.as_str().to_owned()),
             );
+            child_span.log("Test Event".into());
             child_span.finish_at(timestamp());
         }
 

@@ -2,7 +2,6 @@ use opentracing_api::SpanContext as OpentracingSpanContext;
 use opentracing_rust_wip::{FinishedSpan, Reporter, Span as OpentracingSpan, TagValue};
 
 use rand::random;
-use std::borrow::Borrow;
 use std::boxed::Box;
 use std::collections::hash_map::Iter as HashMapIter;
 use std::collections::HashMap;
@@ -148,6 +147,7 @@ pub struct Span {
     pub context: SpanContext,
     pub operation_name: String,
     pub tags: HashMap<String, TagValue>,
+    pub logs: Vec<(u64, String)>,
     pub start_time: u64,
     pub duration: u64,
     reporter: Weak<RemoteReporter>,
@@ -167,14 +167,11 @@ impl<'a> Span {
             context: SpanContext::child(parent),
             operation_name: String::new(),
             tags: HashMap::new(),
+            logs: Vec::new(),
             start_time,
             duration: 0,
             reporter: Rc::downgrade(reporter),
         }
-    }
-
-    pub fn context(&self) -> &SpanContext {
-        self.context.borrow()
     }
 }
 
@@ -182,7 +179,7 @@ impl<'a> OpentracingSpan<'a> for Span {
     type Context = SpanContext;
 
     fn context(&self) -> &SpanContext {
-        unimplemented!()
+        &self.context
     }
 
     fn set_tag<S>(&mut self, key: S, value: TagValue)
@@ -192,11 +189,11 @@ impl<'a> OpentracingSpan<'a> for Span {
         self.tags.insert(key.into(), value);
     }
 
-    fn unset_tag<S>(&mut self, _key: S)
+    fn unset_tag<S>(&mut self, key: S)
     where
         S: Into<String>,
     {
-        unimplemented!()
+        self.tags.remove(&key.into());
     }
 
     fn tag<S>(&self, _key: S) -> Option<&TagValue>
@@ -206,33 +203,33 @@ impl<'a> OpentracingSpan<'a> for Span {
         unimplemented!()
     }
 
-    fn log(&mut self, _event: String) {
-        unimplemented!()
+    fn log(&mut self, event: String) {
+        self.log_at(Tracer::timestamp(), event)
     }
 
-    fn log_at(&mut self, _timestamp: u64, _event: String) {
-        unimplemented!()
+    fn log_at(&mut self, timestamp: u64, event: String) {
+        self.logs.push((timestamp, event))
     }
 
-    fn set_baggage_item<S>(&mut self, _key: S, _value: String)
+    fn set_baggage_item<S>(&mut self, key: S, value: String)
     where
         S: Into<String>,
     {
-        unimplemented!()
+        self.context.baggage.insert(key.into(), value);
     }
 
-    fn unset_baggage_item<S>(&mut self, _key: S)
+    fn unset_baggage_item<S>(&mut self, key: S)
     where
         S: Into<String>,
     {
-        unimplemented!()
+        self.context.baggage.remove(&key.into());
     }
 
-    fn baggage_item<S>(&self, _ey: S) -> Option<&String>
+    fn baggage_item<S>(&self, key: S) -> Option<&String>
     where
         S: Into<String>,
     {
-        unimplemented!()
+        self.context.baggage.get(&key.into())
     }
 
     fn set_operation_name<S>(&mut self, name: S)
