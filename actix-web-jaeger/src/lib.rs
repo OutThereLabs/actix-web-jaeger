@@ -11,21 +11,6 @@ mod tests {
     use actix_web_opentracing::*;
     use jaeger_client_rust::{Span as JaegerSpan, Tracer as JaegerTracer};
     use opentracing_rust_wip::*;
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    pub fn timestamp() -> u64 {
-        let duration = SystemTime::now().duration_since(UNIX_EPOCH);
-        let seconds = duration
-            .clone()
-            .map(|duration| duration.as_secs())
-            .unwrap_or(0) as u64;
-
-        let nanoseconds = duration
-            .map(|duration| duration.subsec_nanos())
-            .unwrap_or(0) as u64;
-
-        (seconds * 1000 * 1000) + (nanoseconds / 1000)
-    }
 
     fn index(req: &HttpRequest) -> HttpResponse {
         let extensions = req.extensions();
@@ -39,7 +24,7 @@ mod tests {
                 TagValue::String(Tags::SpanKindClient.as_str().to_owned()),
             );
             child_span.log("Test Event".into());
-            child_span.finish_at(timestamp());
+            child_span.finish();
         }
 
         let response = HttpResponse::Ok().into();

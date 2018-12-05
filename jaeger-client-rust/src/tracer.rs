@@ -18,6 +18,9 @@ pub struct Tracer {
     reporter: Rc<RemoteReporter>,
 }
 
+const MILLIS_PER_SEC: u64 = 1_000_000_000;
+const NANOS_PER_MILLI: u64 = 1_000_000;
+
 impl Tracer {
     pub fn default() -> Self {
         return Tracer {
@@ -36,9 +39,8 @@ impl Tracer {
             .map(|duration| duration.subsec_nanos())
             .unwrap_or(0) as u64;
 
-        (seconds * 1000 * 1000) + (nanoseconds / 1000)
+        (seconds * MILLIS_PER_SEC) + (nanoseconds / NANOS_PER_MILLI)
     }
-
     pub fn report(&self, span: &Span) {
         self.reporter.report(span)
     }
