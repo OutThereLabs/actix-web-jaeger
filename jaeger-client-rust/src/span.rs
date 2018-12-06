@@ -12,7 +12,7 @@ use tracer::Tracer;
 
 use reporter::RemoteReporter;
 
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct SpanContext {
     baggage: Box<HashMap<String, String>>,
 }
@@ -31,7 +31,7 @@ impl SpanContext {
         span_context
     }
 
-    fn convert_hex_to_u64(value: &String) -> Result<u64, ParseIntError> {
+    fn convert_hex_to_u64(value: &str) -> Result<u64, ParseIntError> {
         u64::from_str_radix(value, 16).map_err(|error| {
             error!("Can't decode hex: {}", error);
             error
@@ -106,11 +106,11 @@ impl SpanContext {
             );
 
             if let Some(trace_id) = parent.trace_id() {
-                child.set_trace_id(trace_id.clone());
+                child.set_trace_id(trace_id);
             }
 
             if let Some(parent_span_id) = parent.span_id() {
-                child.set_parent_span_id(parent_span_id.clone());
+                child.set_parent_span_id(parent_span_id);
             }
         }
 
@@ -122,7 +122,8 @@ impl SpanContext {
     }
 
     fn generate_id() -> u64 {
-        random::<u32>() as u64
+        // TODO: Fix issue with generated IDs that are too large
+        u64::from(random::<u32>())
     }
 }
 
@@ -142,7 +143,7 @@ impl<'a> OpentracingSpanContext<'a> for SpanContext {
     }
 }
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct Span {
     pub context: SpanContext,
     pub operation_name: String,
@@ -253,7 +254,6 @@ impl<'a> OpentracingSpan<'a> for Span {
             span_to_report.duration = timestamp - span_to_report.start_time;
             reporter.report(&span_to_report);
         }
-        let finished_span = FinishedSpan::new(self.context.clone());
-        finished_span
+        FinishedSpan::new(self.context.clone())
     }
 }

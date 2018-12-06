@@ -1,9 +1,9 @@
-use opentracing_rust_wip::{Reporter, TagValue, Span as OpentracingSpan};
+use opentracing_rust_wip::{Reporter, Span as OpentracingSpan, TagValue};
 use span::*;
 
 use jaeger_thrift::agent::*;
 use jaeger_thrift::jaeger::{
-    Batch, Process, Span as JaegerThriftSpan, SpanRef, SpanRefType, Log, Tag, TagType,
+    Batch, Log, Process, Span as JaegerThriftSpan, SpanRef, SpanRefType, Tag, TagType,
 };
 use std::cell::RefCell;
 use std::env;
@@ -66,7 +66,7 @@ impl Write for TUdpChannel {
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        if self.buffer.len() < 1 {
+        if self.buffer.is_empty() {
             return Ok(());
         }
 
@@ -107,7 +107,7 @@ impl RemoteReporter {
         Self::new(
             jaeger_service_name,
             None,
-            jaeger_agent_host,
+            jaeger_agent_host.as_str(),
             jaeger_agent_port,
         )
     }
@@ -115,7 +115,7 @@ impl RemoteReporter {
     pub fn new(
         service_name: String,
         tags: Option<Vec<Tag>>,
-        jaeger_agent_host: String,
+        jaeger_agent_host: &str,
         jaeger_agent_port: u16,
     ) -> RemoteReporter {
         let process = Process { service_name, tags };
@@ -195,19 +195,23 @@ impl<'a> Reporter<'a> for RemoteReporter {
                 }
             }).collect();
 
-        let logs: Vec<Log> = span.logs.iter().map(|(timestamp, event)|{
-            Log::new(timestamp.clone() as i64, vec![
-                Tag::new(
-                    "event".to_owned(),
-                    TagType::STRING,
-                    Some(event.clone()),
-                    None,
-                    None,
-                    None,
-                    None,
+        let logs: Vec<Log> = span
+            .logs
+            .iter()
+            .map(|(timestamp, event)| {
+                Log::new(
+                    *timestamp as i64,
+                    vec![Tag::new(
+                        "event".to_owned(),
+                        TagType::STRING,
+                        Some(event.clone()),
+                        None,
+                        None,
+                        None,
+                        None,
+                    )],
                 )
-            ])
-        }).collect();
+            }).collect();
 
         let span = JaegerThriftSpan::new(
             trace_id_low,

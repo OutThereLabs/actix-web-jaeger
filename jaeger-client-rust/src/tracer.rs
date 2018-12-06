@@ -23,9 +23,9 @@ const NANOS_PER_MILLI: u64 = 1_000_000;
 
 impl Tracer {
     pub fn default() -> Self {
-        return Tracer {
+        Tracer {
             reporter: Rc::new(RemoteReporter::default()),
-        };
+        }
     }
 
     pub fn timestamp() -> u64 {
@@ -33,13 +33,13 @@ impl Tracer {
         let seconds = duration
             .clone()
             .map(|duration| duration.as_secs())
-            .unwrap_or(0) as u64;
+            .unwrap_or(0);
 
         let nanoseconds = duration
             .map(|duration| duration.subsec_nanos())
-            .unwrap_or(0) as u64;
+            .unwrap_or(0);
 
-        (seconds * MILLIS_PER_SEC) + (nanoseconds / NANOS_PER_MILLI)
+        (seconds * MILLIS_PER_SEC) + (u64::from(nanoseconds) / NANOS_PER_MILLI)
     }
     pub fn report(&self, span: &Span) {
         self.reporter.report(span)
@@ -79,7 +79,10 @@ impl<'a> OpentracingTracer<'a> for Tracer {
     ) -> Result<(), Self::Error> {
         match format {
             //TODO: Multiple injectors based on format/carrier
-            _ => Ok(Injector::inject(span_context, carrier)),
+            _ => {
+                Injector::inject(span_context, carrier);
+                Ok(())
+            },
         }
     }
 
