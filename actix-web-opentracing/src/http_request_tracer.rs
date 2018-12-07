@@ -34,11 +34,9 @@ where
     let span = extensions.get::<T::Span>();
     let context = span.map(|span| span.context());
 
-    if let Some(tracer) = http_request_tracer_from::<T, S>(req) {
-        let span = tracer.start_span(operation_name, context);
-        Some(span)
-    } else {
-        None
+    match (context, http_request_tracer_from::<T, S>(req)) {
+        (Some(context), Some(tracer)) => Some(tracer.start_span(operation_name, Some(context))),
+        (_, _) => None
     }
 }
 
@@ -74,17 +72,15 @@ where
                 result
             }).collect();
 
-        let mut span = match self.tracer.extract(&"headers", &carrier) {
-            Ok(context) => self.tracer.start_span(span_name, Some(&context)),
-            Err(_error) => self.tracer.start_span(span_name, None),
-        };
+        if let Ok(context) = self.tracer.extract(&"headers", &carrier) {
+            let mut span = self.tracer.start_span(span_name, Some(&context));
+            span.set_tag("component", TagValue::String("actix-web".into()));
+            span.set_tag("span.kind", TagValue::String("server".into()));
+            span.set_tag("http.method", TagValue::String(req.method().as_str().into()));
+            span.set_tag("http.url", TagValue::String(req.uri().to_string()));
 
-        span.set_tag("component", TagValue::String("actix-web".into()));
-        span.set_tag("span.kind", TagValue::String("server".into()));
-        span.set_tag("http.method", TagValue::String(req.method().as_str().into()));
-        span.set_tag("http.url", TagValue::String(req.uri().to_string()));
-
-        req.extensions_mut().insert(span);
+            req.extensions_mut().insert(span);
+        }
 
         req.extensions_mut().insert(MiddlewareTracer{
             tracer: Rc::downgrade(&self.tracer),
@@ -96,9 +92,10 @@ where
 
     fn response(&self, req: &HttpRequest<S>, resp: HttpResponse) -> Result<Response> {
         let mut extensions = req.extensions_mut();
-        let mut span = extensions.remove::<T::Span>().expect("Missing span");
-        span.set_tag("http.status_code", TagValue::U16(resp.status().as_u16()));
-        span.finish();
+        if let Some(mut span) = extensions.remove::<T::Span>() {
+            span.set_tag("http.status_code", TagValue::U16(resp.status().as_u16()));
+            span.finish();
+        }
 
         Ok(Response::Done(resp))
     }

@@ -12,6 +12,7 @@ use SpanContext;
 
 pub enum Error {
     NoExtractorFound,
+    UnableToExtract,
 }
 
 pub struct Tracer {
@@ -93,7 +94,7 @@ impl<'a> OpentracingTracer<'a> for Tracer {
     ) -> Result<Self::SpanContext, Self::Error> {
         match format {
             //TODO: Multiple extractors based on format/carrier
-            _ => Ok(Extractor::extract(carrier)),
+            _ => Extractor::extract(carrier).ok_or(Error::UnableToExtract),
         }
     }
 }

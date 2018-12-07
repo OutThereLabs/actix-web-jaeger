@@ -24,7 +24,6 @@ impl SpanContext {
             baggage: Box::from(baggage),
         };
         let new_id = Self::generate_id();
-        trace!("Generated new ID: {} ({:x})", new_id, new_id);
 
         span_context.set_trace_id(new_id);
         span_context.set_span_id(new_id);
@@ -99,12 +98,6 @@ impl SpanContext {
         let mut child = Self::new();
 
         if let Some(parent) = parent {
-            trace!(
-                "Creating child {:x} of parent {:x}",
-                child.span_id().unwrap_or(0),
-                parent.span_id().unwrap_or(0)
-            );
-
             if let Some(trace_id) = parent.trace_id() {
                 child.set_trace_id(trace_id);
             }

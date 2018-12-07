@@ -39,7 +39,7 @@ mod tests {
                 .finish()
         });
 
-        let req = srv.get().finish().unwrap();
+        let req = srv.get().header("x-b3-traceid", "00000000").header("x-b3-spanid", "00000000").finish().unwrap();
         let response = srv.execute(req.send()).unwrap();
         assert!(response.status().is_success());
     }

@@ -15,13 +15,17 @@ const JAEGER_HEADERS: [&str; 7] = [
 ];
 
 impl Extractor {
-    pub fn extract(carrier: &HashMap<String, String>) -> SpanContext {
+    pub fn extract(carrier: &HashMap<String, String>) -> Option<SpanContext> {
         let baggage: HashMap<String, String> = carrier
             .iter()
             .filter(|(name, _value)| JAEGER_HEADERS.contains(&name.as_str()))
             .map(|(key, value)| (key.clone(), value.clone()))
             .collect();
 
-        SpanContext::from(baggage)
+        if baggage.is_empty() {
+            None
+        } else {
+            Some(SpanContext::from(baggage))
+        }
     }
 }
