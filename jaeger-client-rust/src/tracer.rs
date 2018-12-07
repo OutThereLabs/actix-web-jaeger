@@ -82,7 +82,7 @@ impl<'a> OpentracingTracer<'a> for Tracer {
             _ => {
                 Injector::inject(span_context, carrier);
                 Ok(())
-            },
+            }
         }
     }
 

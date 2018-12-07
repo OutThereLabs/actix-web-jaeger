@@ -125,19 +125,13 @@ impl RemoteReporter {
 
         let mut output_channel = TUdpChannel::new();
 
-        let remote_address = format!("{}:6831", jaeger_agent_host);
+        let remote_address = format!("{}:{}", jaeger_agent_host, jaeger_agent_port);
+        let local_address = SocketAddr::from(([0, 0, 0, 0], 0));
 
-        if let Some(error) = output_channel
-            .open(SocketAddr::from(([127, 0, 0, 1], 0)), remote_address)
-            .err()
-        {
+        trace!("Connecting to {}", remote_address);
+
+        if let Some(error) = output_channel.open(local_address, remote_address).err() {
             error!("Got an error opening output channel: {}", error);
-        } else {
-            trace!(
-                "Established UDP socket to {}:{}",
-                jaeger_agent_host,
-                jaeger_agent_port
-            );
         }
 
         let output_protocol = TCompactOutputProtocol::new(output_channel);
@@ -237,10 +231,8 @@ impl<'a> Reporter<'a> for RemoteReporter {
 
         let batch = Batch::new(self.process.clone(), vec![span]);
 
-        trace!("Sending batch: {:?}", batch);
-
         match self.client.borrow_mut().emit_batch(batch) {
-            Ok(_) => {}
+            Ok(_) => trace!("Batch sent."),
             Err(error) => error!("Got an error sending span: {}", error),
         }
     }
