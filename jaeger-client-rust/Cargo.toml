@@ -9,5 +9,6 @@ jaeger-thrift = { path = "../jaeger-thrift"}
 log = "0.4.6"
 opentracing-api = {git = "https://github.com/opentracing/opentracing-rust"}
 opentracing-rust-wip = { path = "../opentracing-rust-wip" }
+ordered-float = "0.5"
 rand = "^0"
 thrift = "0.0.4"

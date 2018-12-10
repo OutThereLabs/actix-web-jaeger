@@ -4,6 +4,7 @@ extern crate opentracing_rust_wip;
 extern crate log;
 extern crate jaeger_thrift;
 extern crate opentracing_api;
+extern crate ordered_float;
 extern crate rand;
 extern crate thrift;
 

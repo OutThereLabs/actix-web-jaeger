@@ -5,6 +5,7 @@ use jaeger_thrift::agent::*;
 use jaeger_thrift::jaeger::{
     Batch, Log, Process, Span as JaegerThriftSpan, SpanRef, SpanRefType, Tag, TagType,
 };
+use ordered_float::OrderedFloat;
 use std::cell::RefCell;
 use std::env;
 use std::io;
@@ -145,6 +146,123 @@ impl RemoteReporter {
     }
 }
 
+fn thrift_tag_from(key: &String, value: &TagValue) -> Option<Tag> {
+    match value {
+        TagValue::String(string_value) => Some(Tag::new(
+            key.clone(),
+            TagType::STRING,
+            Some(string_value.clone()),
+            None,
+            None,
+            None,
+            None,
+        )),
+        TagValue::Boolean(boolean_value) => Some(Tag::new(
+            key.clone(),
+            TagType::BOOL,
+            None,
+            None,
+            Some(boolean_value.clone()),
+            None,
+            None,
+        )),
+        TagValue::I8(i8_value) => Some(Tag::new(
+            key.clone(),
+            TagType::LONG,
+            None,
+            None,
+            None,
+            Some(i8_value.clone().into()),
+            None,
+        )),
+        TagValue::I16(i16_value) => Some(Tag::new(
+            key.clone(),
+            TagType::LONG,
+            None,
+            None,
+            None,
+            Some(i16_value.clone().into()),
+            None,
+        )),
+        TagValue::I32(i32_value) => Some(Tag::new(
+            key.clone(),
+            TagType::LONG,
+            None,
+            None,
+            None,
+            Some(i32_value.clone().into()),
+            None,
+        )),
+        TagValue::I64(int_value) => Some(Tag::new(
+            key.clone(),
+            TagType::LONG,
+            None,
+            None,
+            None,
+            Some(int_value.clone()),
+            None,
+        )),
+        TagValue::U8(u8_value) => Some(Tag::new(
+            key.clone(),
+            TagType::LONG,
+            None,
+            None,
+            None,
+            Some(u8_value.clone().into()),
+            None,
+        )),
+        TagValue::U16(u16_value) => Some(Tag::new(
+            key.clone(),
+            TagType::LONG,
+            None,
+            None,
+            None,
+            Some(u16_value.clone().into()),
+            None,
+        )),
+        TagValue::U32(u32_value) => Some(Tag::new(
+            key.clone(),
+            TagType::LONG,
+            None,
+            None,
+            None,
+            Some(u32_value.clone().into()),
+            None,
+        )),
+        TagValue::U64(u64_value) => Some(Tag::new(
+            key.clone(),
+            TagType::LONG,
+            None,
+            None,
+            None,
+            Some(u64_value.clone() as i64),
+            None,
+        )),
+        TagValue::F32(f32_value) => {
+            let f64: f64 = f32_value.clone().into();
+
+            Some(Tag::new(
+                key.clone(),
+                TagType::DOUBLE,
+                None,
+                Some(OrderedFloat::from(f64)),
+                None,
+                None,
+                None,
+            ))
+        }
+        TagValue::F64(f64_value) => Some(Tag::new(
+            key.clone(),
+            TagType::DOUBLE,
+            None,
+            Some(OrderedFloat::from(f64_value.clone())),
+            None,
+            None,
+            None,
+        )),
+    }
+}
+
 impl<'a> Reporter<'a> for RemoteReporter {
     type Span = Span;
 
@@ -156,38 +274,8 @@ impl<'a> Reporter<'a> for RemoteReporter {
         let tags: Vec<Tag> = span
             .tags
             .iter()
-            .flat_map(|(key, value)| -> Option<Tag> {
-                match value {
-                    TagValue::String(string_value) => Some(Tag::new(
-                        key.clone(),
-                        TagType::STRING,
-                        Some(string_value.clone()),
-                        None,
-                        None,
-                        None,
-                        None,
-                    )),
-                    TagValue::Boolean(boolean_value) => Some(Tag::new(
-                        key.clone(),
-                        TagType::BOOL,
-                        None,
-                        None,
-                        Some(boolean_value.clone()),
-                        None,
-                        None,
-                    )),
-                    TagValue::I64(int_value) => Some(Tag::new(
-                        key.clone(),
-                        TagType::LONG,
-                        None,
-                        None,
-                        None,
-                        Some(int_value.clone()),
-                        None,
-                    )),
-                    _ => None,
-                }
-            }).collect();
+            .flat_map(|(key, value)| -> Option<Tag> { thrift_tag_from(key, value) })
+            .collect();
 
         let logs: Vec<Log> = span
             .logs
@@ -196,18 +284,8 @@ impl<'a> Reporter<'a> for RemoteReporter {
                 Log::new(
                     *timestamp as i64,
                     tags.iter()
-                        .flat_map(|(key, value)| match value {
-                            TagValue::String(string) => Some(Tag::new(
-                                key.to_string(),
-                                TagType::STRING,
-                                Some(string.clone()),
-                                None,
-                                None,
-                                None,
-                                None,
-                            )),
-                            _ => None,
-                        }).collect(),
+                        .flat_map(|(key, value)| thrift_tag_from(key, value))
+                        .collect(),
                 )
             }).collect();
 
