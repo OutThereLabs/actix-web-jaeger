@@ -100,7 +100,7 @@ where
 
     fn response(&self, req: &HttpRequest<S>, resp: HttpResponse) -> Result<Response> {
         let mut extensions = req.extensions_mut();
-        if let Some(mut span) = extensions.remove::<T::Span>() {
+        if let Some(span) = extensions.get_mut::<T::Span>() {
             span.set_tag("http.status_code", TagValue::U16(resp.status().as_u16()));
             span.log_event("ss".to_owned());
         }
