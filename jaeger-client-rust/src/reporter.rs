@@ -192,18 +192,22 @@ impl<'a> Reporter<'a> for RemoteReporter {
         let logs: Vec<Log> = span
             .logs
             .iter()
-            .map(|(timestamp, event)| {
+            .map(|(timestamp, tags)| {
                 Log::new(
                     *timestamp as i64,
-                    vec![Tag::new(
-                        "event".to_owned(),
-                        TagType::STRING,
-                        Some(event.clone()),
-                        None,
-                        None,
-                        None,
-                        None,
-                    )],
+                    tags.iter()
+                        .flat_map(|(key, value)| match value {
+                            TagValue::String(string) => Some(Tag::new(
+                                key.to_string(),
+                                TagType::STRING,
+                                Some(string.clone()),
+                                None,
+                                None,
+                                None,
+                                None,
+                            )),
+                            _ => None,
+                        }).collect(),
                 )
             }).collect();
 

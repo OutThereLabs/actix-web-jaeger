@@ -20,9 +20,13 @@ impl<'a, T: Tracer<'a>> HttpRequestTracer<'a, T> {
     }
 }
 
-pub fn http_request_tracer_from<T: Tracer<'static> + 'static, S: 'static>(req: &HttpRequest<S>) -> Option<Rc<T>> {
+pub fn http_request_tracer_from<T: Tracer<'static> + 'static, S: 'static>(
+    req: &HttpRequest<S>,
+) -> Option<Rc<T>> {
     let extensions = req.extensions();
-    extensions.get::<MiddlewareTracer<'static, T>>().and_then(|this| this.tracer())
+    extensions
+        .get::<MiddlewareTracer<'static, T>>()
+        .and_then(|this| this.tracer())
 }
 
 pub fn start_child_span<T, S>(req: &HttpRequest<S>, operation_name: String) -> Option<T::Span>
@@ -36,7 +40,7 @@ where
 
     match (context, http_request_tracer_from::<T, S>(req)) {
         (Some(context), Some(tracer)) => Some(tracer.start_span(operation_name, Some(context))),
-        (_, _) => None
+        (_, _) => None,
     }
 }
 
@@ -76,13 +80,16 @@ where
             let mut span = self.tracer.start_span(span_name, Some(&context));
             span.set_tag("component", TagValue::String("actix-web".into()));
             span.set_tag("span.kind", TagValue::String("server".into()));
-            span.set_tag("http.method", TagValue::String(req.method().as_str().into()));
+            span.set_tag(
+                "http.method",
+                TagValue::String(req.method().as_str().into()),
+            );
             span.set_tag("http.url", TagValue::String(req.uri().to_string()));
 
             req.extensions_mut().insert(span);
         }
 
-        req.extensions_mut().insert(MiddlewareTracer{
+        req.extensions_mut().insert(MiddlewareTracer {
             tracer: Rc::downgrade(&self.tracer),
             _a: PhantomData,
         });

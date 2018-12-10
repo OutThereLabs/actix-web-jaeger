@@ -28,10 +28,19 @@ pub trait Span<'a> {
         S: Into<String>;
 
     /// Record an event at the current walltime timestamp.
-    fn log(&mut self, event: String);
+    fn log_event(&mut self, event: String);
+
+    /// Record a set of tags at the current walltime timestamp.
+    fn log<S, I>(&mut self, tags: I)
+    where
+        S: Into<String>,
+        I: IntoIterator<Item = (S, TagValue)>;
 
     /// Record an event at the given walltime timestamp.
-    fn log_at(&mut self, timestamp: u64, event: String);
+    fn log_at<S, I>(&mut self, timestamp: u64, tags: I)
+    where
+        S: Into<String>,
+        I: IntoIterator<Item = (S, TagValue)>;
 
     /// Sets a baggage item in the Span (and its SpanContext) as a key/value pair.
     fn set_baggage_item<S>(&mut self, key: S, value: String)

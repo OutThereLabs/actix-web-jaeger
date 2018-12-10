@@ -20,7 +20,7 @@ mod tests {
                 Tags::SpanKind.as_str().to_owned(),
                 TagValue::String(Tags::SpanKindClient.as_str().to_owned()),
             );
-            child_span.log("Test Event".into());
+            child_span.log_event("Test Event".into());
             child_span.finish();
         }
 
@@ -39,7 +39,12 @@ mod tests {
                 .finish()
         });
 
-        let req = srv.get().header("x-b3-traceid", "00000000").header("x-b3-spanid", "00000000").finish().unwrap();
+        let req = srv
+            .get()
+            .header("x-b3-traceid", "00000000")
+            .header("x-b3-spanid", "00000000")
+            .finish()
+            .unwrap();
         let response = srv.execute(req.send()).unwrap();
         assert!(response.status().is_success());
     }

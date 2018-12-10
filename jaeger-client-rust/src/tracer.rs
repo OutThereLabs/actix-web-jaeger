@@ -15,8 +15,13 @@ pub enum Error {
     UnableToExtract,
 }
 
+pub enum Codec {
+    ZipkinB3TextMap,
+}
+
 pub struct Tracer {
     reporter: Rc<RemoteReporter>,
+    codec: Codec,
 }
 
 const NANOS_PER_MICRO: u64 = 1000;
@@ -26,6 +31,7 @@ impl Tracer {
     pub fn default() -> Self {
         Tracer {
             reporter: Rc::new(RemoteReporter::default()),
+            codec: Codec::ZipkinB3TextMap,
         }
     }
 
@@ -79,9 +85,8 @@ impl<'a> OpentracingTracer<'a> for Tracer {
         carrier: &mut Self::Carrier,
     ) -> Result<(), Self::Error> {
         match format {
-            //TODO: Multiple injectors based on format/carrier
             _ => {
-                Injector::inject(span_context, carrier);
+                Injector::inject(&self.codec, span_context, carrier);
                 Ok(())
             }
         }
@@ -93,8 +98,7 @@ impl<'a> OpentracingTracer<'a> for Tracer {
         carrier: &Self::Carrier,
     ) -> Result<Self::SpanContext, Self::Error> {
         match format {
-            //TODO: Multiple extractors based on format/carrier
-            _ => Extractor::extract(carrier).ok_or(Error::UnableToExtract),
+            _ => Extractor::extract(&self.codec, carrier).ok_or(Error::UnableToExtract),
         }
     }
 }

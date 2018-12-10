@@ -141,7 +141,7 @@ pub struct Span {
     pub context: SpanContext,
     pub operation_name: String,
     pub tags: HashMap<String, TagValue>,
-    pub logs: Vec<(u64, String)>,
+    pub logs: Vec<(u64, HashMap<String, TagValue>)>,
     pub start_time: u64,
     pub duration: u64,
     reporter: Weak<RemoteReporter>,
@@ -197,12 +197,29 @@ impl<'a> OpentracingSpan<'a> for Span {
         self.tags.get(&key.into())
     }
 
-    fn log(&mut self, event: String) {
-        self.log_at(Tracer::timestamp(), event)
+    fn log_event(&mut self, event: String) {
+        self.log(vec![("event".to_string(), TagValue::String(event))])
     }
 
-    fn log_at(&mut self, timestamp: u64, event: String) {
-        self.logs.push((timestamp, event))
+    fn log<S, I>(&mut self, tags: I)
+    where
+        S: Into<String>,
+        I: IntoIterator<Item = (S, TagValue)>,
+    {
+        self.log_at(Tracer::timestamp(), tags)
+    }
+
+    fn log_at<S, I>(&mut self, timestamp: u64, tags: I)
+    where
+        S: Into<String>,
+        I: IntoIterator<Item = (S, TagValue)>,
+    {
+        self.logs.push((
+            timestamp,
+            tags.into_iter()
+                .map(|(key, value)| (key.into(), value))
+                .collect(),
+        ))
     }
 
     fn set_baggage_item<S>(&mut self, key: S, value: String)

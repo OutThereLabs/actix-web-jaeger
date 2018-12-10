@@ -1,10 +1,11 @@
 use std::collections::HashMap;
+use tracer::Codec;
 
 use span::SpanContext;
 
 pub struct Extractor {}
 
-const JAEGER_HEADERS: [&str; 7] = [
+const B3_HEADERS: [&str; 7] = [
     "x-request-id",
     "x-b3-traceid",
     "x-b3-spanid",
@@ -15,17 +16,21 @@ const JAEGER_HEADERS: [&str; 7] = [
 ];
 
 impl Extractor {
-    pub fn extract(carrier: &HashMap<String, String>) -> Option<SpanContext> {
-        let baggage: HashMap<String, String> = carrier
-            .iter()
-            .filter(|(name, _value)| JAEGER_HEADERS.contains(&name.as_str()))
-            .map(|(key, value)| (key.clone(), value.clone()))
-            .collect();
+    pub fn extract(codec: &Codec, carrier: &HashMap<String, String>) -> Option<SpanContext> {
+        match codec {
+            Codec::ZipkinB3TextMap => {
+                let baggage: HashMap<String, String> = carrier
+                    .iter()
+                    .filter(|(name, _value)| B3_HEADERS.contains(&name.as_str()))
+                    .map(|(key, value)| (key.clone(), value.clone()))
+                    .collect();
 
-        if baggage.is_empty() {
-            None
-        } else {
-            Some(SpanContext::from(baggage))
+                if baggage.is_empty() {
+                    None
+                } else {
+                    Some(SpanContext::from(baggage))
+                }
+            }
         }
     }
 }
