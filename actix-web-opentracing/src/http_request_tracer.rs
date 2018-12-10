@@ -78,6 +78,7 @@ where
 
         if let Ok(context) = self.tracer.extract(&"headers", &carrier) {
             let mut span = self.tracer.start_span(span_name, Some(&context));
+            span.log_event("sr".to_owned());
             span.set_tag("component", TagValue::String("actix-web".into()));
             span.set_tag("span.kind", TagValue::String("server".into()));
             span.set_tag(
@@ -101,9 +102,18 @@ where
         let mut extensions = req.extensions_mut();
         if let Some(mut span) = extensions.remove::<T::Span>() {
             span.set_tag("http.status_code", TagValue::U16(resp.status().as_u16()));
-            span.finish();
+            span.log_event("ss".to_owned());
         }
 
         Ok(Response::Done(resp))
+    }
+
+    fn finish(&self, req: &HttpRequest<S>, _resp: &HttpResponse) -> Finished {
+        let mut extensions = req.extensions_mut();
+        if let Some(span) = extensions.remove::<T::Span>() {
+            span.finish();
+        }
+
+        Finished::Done
     }
 }
