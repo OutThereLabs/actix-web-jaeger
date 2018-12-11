@@ -303,7 +303,7 @@ impl<'a> Reporter<'a> for RemoteReporter {
                     span_id as i64,
                 )]
             }),
-            0,
+            span.context().flags().unwrap_or(0) as i32,
             span.start_time as i64,
             span.duration as i64,
             tags,

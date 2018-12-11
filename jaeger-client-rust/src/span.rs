@@ -94,6 +94,19 @@ impl SpanContext {
         };
     }
 
+    pub fn flags(&self) -> Option<u64> {
+        self.get_u64_baggage_item("x-b3-flags")
+    }
+
+    pub fn set_flags(&mut self, value: u64) {
+        match Self::convert_u64_to_hex(value) {
+            Ok(string) => {
+                self.baggage.insert("x-b3-flags".into(), string);
+            }
+            Err(error) => error!("Can't set flags: {}", error),
+        };
+    }
+
     pub fn child(parent: Option<&SpanContext>) -> Self {
         let mut child = Self::new();
 
@@ -104,6 +117,10 @@ impl SpanContext {
 
             if let Some(parent_span_id) = parent.span_id() {
                 child.set_parent_span_id(parent_span_id);
+            }
+
+            if let Some(parent_flags) = parent.flags() {
+                child.set_flags(parent_flags);
             }
         }
 
