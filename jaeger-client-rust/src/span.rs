@@ -5,16 +5,61 @@ use rand::random;
 use std::boxed::Box;
 use std::collections::hash_map::Iter as HashMapIter;
 use std::collections::HashMap;
-use std::io;
 use std::num::ParseIntError;
 use std::rc::{Rc, Weak};
 use tracer::Tracer;
 
 use reporter::RemoteReporter;
+use std::convert::TryFrom;
 
 #[derive(Default, Debug, Clone)]
 pub struct SpanContext {
     baggage: Box<HashMap<String, String>>,
+}
+
+pub fn convert_hex_to_u64(value: &str) -> Result<u64, ParseIntError> {
+    u64::from_str_radix(value, 16).map_err(|error| {
+        error!("Can't decode hex: {}", error);
+        error
+    })
+}
+
+pub type SpanId = u64;
+
+pub struct TraceId {
+    pub low: u64,
+    pub high: u64,
+}
+
+impl TraceId {
+    fn to_hex_string(&self) -> String {
+        if self.high > 0 {
+            format!("{:x}{:x}", self.low, self.high)
+        } else {
+            format!("{:x}", self.low)
+        }
+    }
+}
+
+impl TryFrom<&String> for TraceId {
+    type Error = ParseIntError;
+
+    fn try_from(value: &String) -> Result<Self, Self::Error> {
+        if value.len() > 4 {
+            let low = convert_hex_to_u64(value[0..4].as_ref())?;
+            let high = convert_hex_to_u64(value[4..].as_ref()).unwrap_or(0);
+
+            Ok(Self{
+                low, high
+            })
+        } else {
+            let low = convert_hex_to_u64(value.as_ref())?;
+
+            Ok(Self{
+                low, high: 0
+            })
+        }
+    }
 }
 
 impl SpanContext {
@@ -25,86 +70,45 @@ impl SpanContext {
         };
         let new_id = Self::generate_id();
 
-        span_context.set_trace_id(new_id);
+        span_context.set_trace_id(TraceId{ low: new_id, high: 0 });
         span_context.set_span_id(new_id);
         span_context
     }
 
-    fn convert_hex_to_u64(value: &str) -> Result<u64, ParseIntError> {
-        u64::from_str_radix(value, 16).map_err(|error| {
-            error!("Can't decode hex: {}", error);
-            error
-        })
-    }
-
-    fn convert_u64_to_hex(i: u64) -> Result<String, io::Error> {
-        Ok(format!("{:x}", i))
-    }
-
-    fn get_u64_baggage_item(&self, key: &str) -> Option<u64> {
-        let key_string = key.to_string();
-
+    pub fn trace_id(&self) -> Option<TraceId> {
         self.baggage
-            .get(&key_string)
-            .and_then(|value| match Self::convert_hex_to_u64(value) {
-                Ok(result) => Some(result),
-                Err(error) => {
-                    trace!("Got an error extracting {}: {}", key, error);
-                    None
-                }
-            })
+            .get("x-b3-traceid").and_then(|hex_string| TraceId::try_from(hex_string).ok())
+
     }
 
-    pub fn trace_id(&self) -> Option<u64> {
-        self.get_u64_baggage_item("x-b3-traceid")
+    pub fn set_trace_id(&mut self, trace_id: TraceId) {
+        self.baggage.insert("x-b3-traceid".into(), trace_id.to_hex_string());
     }
 
-    pub fn set_trace_id(&mut self, value: u64) {
-        match Self::convert_u64_to_hex(value) {
-            Ok(string) => {
-                self.baggage.insert("x-b3-traceid".into(), string);
-            }
-            Err(error) => error!("Can't set trace ID: {}", error),
-        };
+    pub fn span_id(&self) -> Option<SpanId> {
+        self.baggage
+            .get("x-b3-spanid").and_then(|hex_string| convert_hex_to_u64(hex_string).ok())
     }
 
-    pub fn span_id(&self) -> Option<u64> {
-        self.get_u64_baggage_item("x-b3-spanid")
-    }
-
-    pub fn set_span_id(&mut self, value: u64) {
-        match Self::convert_u64_to_hex(value) {
-            Ok(string) => {
-                self.baggage.insert("x-b3-spanid".into(), string);
-            }
-            Err(error) => error!("Can't set span ID: {}", error),
-        };
+    pub fn set_span_id(&mut self, value: SpanId) {
+        self.baggage.insert("x-b3-spanid".into(), format!("{:x}", value));
     }
 
     pub fn parent_span_id(&self) -> Option<u64> {
-        self.get_u64_baggage_item("x-b3-parentspanid")
+        self.baggage
+            .get("x-b3-parentspanid").and_then(|hex_string|SpanId::from_str_radix(hex_string.as_str(), 16).ok())
     }
 
     pub fn set_parent_span_id(&mut self, value: u64) {
-        match Self::convert_u64_to_hex(value) {
-            Ok(string) => {
-                self.baggage.insert("x-b3-parentspanid".into(), string);
-            }
-            Err(error) => error!("Can't set parent span ID: {}", error),
-        };
+        self.baggage.insert("x-b3-parentspanid".into(), format!("{:x}", value));
     }
 
     pub fn flags(&self) -> Option<u64> {
-        self.get_u64_baggage_item("x-b3-flags")
-    }
+        self.baggage
+            .get("x-b3-flags").and_then(|hex_string|SpanId::from_str_radix(hex_string.as_str(), 16).ok())    }
 
     pub fn set_flags(&mut self, value: u64) {
-        match Self::convert_u64_to_hex(value) {
-            Ok(string) => {
-                self.baggage.insert("x-b3-flags".into(), string);
-            }
-            Err(error) => error!("Can't set flags: {}", error),
-        };
+        self.baggage.insert("x-b3-flags".into(), format!("{:x}", value));
     }
 
     pub fn child(parent: Option<&SpanContext>) -> Self {

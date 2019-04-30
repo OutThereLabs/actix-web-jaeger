@@ -74,7 +74,8 @@ where
                 };
 
                 result
-            }).collect();
+            })
+            .collect();
 
         if let Ok(context) = self.tracer.extract(&"headers", &carrier) {
             let mut span = self.tracer.start_span(span_name, Some(&context));

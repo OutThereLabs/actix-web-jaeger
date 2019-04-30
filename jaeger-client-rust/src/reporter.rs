@@ -269,7 +269,7 @@ impl<'a> Reporter<'a> for RemoteReporter {
     fn report(&self, span: &Self::Span) {
         trace!("Reporting span: {:?}", span.context());
 
-        let trace_id_low = span.context().trace_id().unwrap_or(0) as i64;
+        let trace_id = span.context().trace_id().unwrap_or(TraceId{low: 0, high: 0});
 
         let tags: Vec<Tag> = span
             .tags
@@ -290,16 +290,16 @@ impl<'a> Reporter<'a> for RemoteReporter {
             }).collect();
 
         let span = JaegerThriftSpan::new(
-            trace_id_low,
-            0,
+            trace_id.low as i64,
+            trace_id.high as i64,
             span.context().span_id().unwrap_or(0) as i64,
             span.context().parent_span_id().unwrap_or(0) as i64,
             span.operation_name.clone(),
             span.context().parent_span_id().map(|span_id| {
                 vec![SpanRef::new(
                     SpanRefType::CHILD_OF,
-                    trace_id_low,
-                    0,
+                    trace_id.low as i64,
+                    trace_id.high as i64,
                     span_id as i64,
                 )]
             }),
