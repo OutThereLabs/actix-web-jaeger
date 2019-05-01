@@ -45,9 +45,10 @@ impl TryFrom<&String> for TraceId {
     type Error = ParseIntError;
 
     fn try_from(value: &String) -> Result<Self, Self::Error> {
-        if value.len() > 4 {
-            let low = convert_hex_to_u64(value[0..4].as_ref())?;
-            let high = convert_hex_to_u64(value[4..].as_ref()).unwrap_or(0);
+        if value.len() > 16 {
+            let high_length = value.len() - 16;
+            let high = convert_hex_to_u64(value[0..high_length].as_ref())?;
+            let low = convert_hex_to_u64(value[high_length..].as_ref())?;
 
             Ok(Self{
                 low, high
