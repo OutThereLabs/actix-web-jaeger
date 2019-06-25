@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Patrick Tescher <patrick@outtherelabs.com>"]
 
 [dependencies]
-actix-web = "0.7"
+actix-web = "1.0"
 actix-web-opentracing = { path = "../actix-web-opentracing" }
 opentracing-rust-wip = { path = "../opentracing-rust-wip" }
 env_logger = "0.6.0"

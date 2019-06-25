@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Patrick Tescher <pat2man@gmail.com>"]
 
 [dependencies]
-actix-web = "0.7"
+actix-web = "1.0"
+actix-service = "0.4"
+bytes = "0.4"
+futures = "0.1"
+log = "0.4.6"
 opentracing-api = {git = "https://github.com/opentracing/opentracing-rust"}
 opentracing-rust-wip = { path = "../opentracing-rust-wip" }

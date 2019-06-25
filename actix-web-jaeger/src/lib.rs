@@ -2,50 +2,47 @@ extern crate actix_web;
 extern crate actix_web_opentracing;
 extern crate env_logger;
 extern crate jaeger_client_rust;
+extern crate log;
 extern crate opentracing_rust_wip;
 
 #[cfg(test)]
 mod tests {
-    use actix_web::test::TestServer;
-    use actix_web::*;
+    use actix_web::{http::StatusCode, test, web, App, HttpResponse};
     use actix_web_opentracing::*;
     use jaeger_client_rust::Tracer as JaegerTracer;
-    use opentracing_rust_wip::*;
+    use log::trace;
+    use opentracing_rust_wip::Span;
 
-    fn index(req: &HttpRequest) -> HttpResponse {
-        if let Some(mut child_span) =
-            start_child_span::<JaegerTracer, ()>(req, "Test Child Span".to_owned())
-        {
-            child_span.set_tag(
-                Tags::SpanKind.as_str().to_owned(),
-                TagValue::String(Tags::SpanKindClient.as_str().to_owned()),
-            );
-            child_span.log_event("Test Event".into());
-            child_span.finish();
-        }
-
+    fn index(req: web::HttpRequest) -> HttpResponse {
+        trace!("Handling request {:?}", req);
+        let span = TracedRequest::<JaegerTracer>::start_child_span(&req, "child span".to_owned());
         let response = HttpResponse::Ok().into();
+        let _finished_span = span.map(|span| span.finish());
         response
     }
 
     #[test]
     fn test() {
-        env_logger::init();
+        trace!("Setting up");
 
-        let mut srv = TestServer::with_factory(|| {
+        let _ = env_logger::try_init();
+
+        let jaeger_tracer = JaegerTracer::default();
+        let request_tracer = HttpRequestTracer::new(jaeger_tracer);
+
+        let mut app = test::init_service(
             App::new()
-                .middleware(HttpRequestTracer::new(JaegerTracer::default()))
-                .handler("/", index)
-                .finish()
-        });
+                .wrap(request_tracer)
+                .service(web::resource("/test").to(index)),
+        );
 
-        let req = srv
-            .get()
+        let req = test::TestRequest::with_uri("/test")
             .header("x-b3-traceid", "00000000")
             .header("x-b3-spanid", "00000000")
-            .finish()
-            .unwrap();
-        let response = srv.execute(req.send()).unwrap();
-        assert!(response.status().is_success());
+            .to_request();
+
+        // Call application
+        let resp = test::call_service(&mut app, req);
+        assert_eq!(resp.status(), StatusCode::OK);
     }
 }

@@ -4,8 +4,8 @@ use Span;
 
 /// A tracer that can start spans and inject/extract span contexts.
 pub trait Tracer<'a> {
-    type SpanContext: SpanContext<'a>;
-    type Span: Span<'a, Context = Self::SpanContext>;
+    type SpanContext: SpanContext<'a> + 'static;
+    type Span: Span<'a, Context = Self::SpanContext> + 'static;
     type Carrier;
     type Error;
 

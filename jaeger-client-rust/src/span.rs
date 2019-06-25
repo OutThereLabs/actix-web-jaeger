@@ -50,15 +50,11 @@ impl TryFrom<&String> for TraceId {
             let high = convert_hex_to_u64(value[0..high_length].as_ref())?;
             let low = convert_hex_to_u64(value[high_length..].as_ref())?;
 
-            Ok(Self{
-                low, high
-            })
+            Ok(Self { low, high })
         } else {
             let low = convert_hex_to_u64(value.as_ref())?;
 
-            Ok(Self{
-                low, high: 0
-            })
+            Ok(Self { low, high: 0 })
         }
     }
 }
@@ -71,45 +67,56 @@ impl SpanContext {
         };
         let new_id = Self::generate_id();
 
-        span_context.set_trace_id(TraceId{ low: new_id, high: 0 });
+        span_context.set_trace_id(TraceId {
+            low: new_id,
+            high: 0,
+        });
         span_context.set_span_id(new_id);
         span_context
     }
 
     pub fn trace_id(&self) -> Option<TraceId> {
         self.baggage
-            .get("x-b3-traceid").and_then(|hex_string| TraceId::try_from(hex_string).ok())
-
+            .get("x-b3-traceid")
+            .and_then(|hex_string| TraceId::try_from(hex_string).ok())
     }
 
     pub fn set_trace_id(&mut self, trace_id: TraceId) {
-        self.baggage.insert("x-b3-traceid".into(), trace_id.to_hex_string());
+        self.baggage
+            .insert("x-b3-traceid".into(), trace_id.to_hex_string());
     }
 
     pub fn span_id(&self) -> Option<SpanId> {
         self.baggage
-            .get("x-b3-spanid").and_then(|hex_string| convert_hex_to_u64(hex_string).ok())
+            .get("x-b3-spanid")
+            .and_then(|hex_string| convert_hex_to_u64(hex_string).ok())
     }
 
     pub fn set_span_id(&mut self, value: SpanId) {
-        self.baggage.insert("x-b3-spanid".into(), format!("{:x}", value));
+        self.baggage
+            .insert("x-b3-spanid".into(), format!("{:x}", value));
     }
 
     pub fn parent_span_id(&self) -> Option<u64> {
         self.baggage
-            .get("x-b3-parentspanid").and_then(|hex_string|SpanId::from_str_radix(hex_string.as_str(), 16).ok())
+            .get("x-b3-parentspanid")
+            .and_then(|hex_string| SpanId::from_str_radix(hex_string.as_str(), 16).ok())
     }
 
     pub fn set_parent_span_id(&mut self, value: u64) {
-        self.baggage.insert("x-b3-parentspanid".into(), format!("{:x}", value));
+        self.baggage
+            .insert("x-b3-parentspanid".into(), format!("{:x}", value));
     }
 
     pub fn flags(&self) -> Option<u64> {
         self.baggage
-            .get("x-b3-flags").and_then(|hex_string|SpanId::from_str_radix(hex_string.as_str(), 16).ok())    }
+            .get("x-b3-flags")
+            .and_then(|hex_string| SpanId::from_str_radix(hex_string.as_str(), 16).ok())
+    }
 
     pub fn set_flags(&mut self, value: u64) {
-        self.baggage.insert("x-b3-flags".into(), format!("{:x}", value));
+        self.baggage
+            .insert("x-b3-flags".into(), format!("{:x}", value));
     }
 
     pub fn child(parent: Option<&SpanContext>) -> Self {
@@ -276,11 +283,11 @@ impl<'a> OpentracingSpan<'a> for Span {
         &self.operation_name
     }
 
-    fn finish(self) -> FinishedSpan<SpanContext> {
+    fn finish(&self) -> FinishedSpan<SpanContext> {
         self.finish_at(Tracer::timestamp())
     }
 
-    fn finish_at(self, timestamp: u64) -> FinishedSpan<SpanContext> {
+    fn finish_at(&self, timestamp: u64) -> FinishedSpan<SpanContext> {
         if let Some(reporter) = self.reporter.upgrade() {
             let mut span_to_report = self.clone();
             span_to_report.duration = timestamp - span_to_report.start_time;

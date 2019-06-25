@@ -68,10 +68,10 @@ pub trait Span<'a> {
     fn operation_name(&self) -> &String;
 
     /// Sets the end timestamp to now and finishes (records) the span.
-    fn finish(self) -> FinishedSpan<Self::Context>;
+    fn finish(&self) -> FinishedSpan<Self::Context>;
 
     /// Sets an explicit end timestamp and finishes (records) the span.
-    fn finish_at(self, timestamp: u64) -> FinishedSpan<Self::Context>;
+    fn finish_at(&self, timestamp: u64) -> FinishedSpan<Self::Context>;
 }
 
 pub struct FinishedSpan<C> {
