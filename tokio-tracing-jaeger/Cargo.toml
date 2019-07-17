@@ -1,0 +1,15 @@
+[package]
+name = "tokio-tracing-jaeger"
+version = "0.1.0"
+authors = ["Patrick Tescher <patrick@outtherelabs.com>"]
+edition = "2018"
+
+[dependencies]
+jaeger-client-rust = { path = "../jaeger-client-rust" }
+log = "0.4"
+opentracing-rust-wip = { path = "../opentracing-rust-wip" }
+tracing = "0.1"
+tracing-core = "0.1"
+
+[dev-dependencies]
+env_logger = "0.6"

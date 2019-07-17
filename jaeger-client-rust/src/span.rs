@@ -11,6 +11,7 @@ use tracer::Tracer;
 
 use reporter::RemoteReporter;
 use std::convert::TryFrom;
+use std::fmt;
 
 #[derive(Default, Debug, Clone)]
 pub struct SpanContext {
@@ -195,6 +196,16 @@ impl<'a> Span {
             duration: 0,
             reporter: Rc::downgrade(reporter),
         }
+    }
+}
+
+impl fmt::Debug for Span {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Span[{}]\n  {:?}", self.operation_name, self.context)?;
+        for (key, value) in self.tags.clone() {
+            write!(f, "\n    {}:{:?}", key, value)?;
+        }
+        Ok(())
     }
 }
 
