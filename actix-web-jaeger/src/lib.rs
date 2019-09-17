@@ -39,6 +39,7 @@ mod tests {
         let req = test::TestRequest::with_uri("/test")
             .header("x-b3-traceid", "463ac35c9f6413ad48485a3953bb6124")
             .header("x-b3-spanid", "48485a3953bb6124")
+            .header("x-b3-flags", "1")
             .to_request();
 
         // Call application
