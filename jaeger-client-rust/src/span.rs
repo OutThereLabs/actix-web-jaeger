@@ -26,6 +26,7 @@ pub fn convert_hex_to_u64(value: &str) -> Result<u64, ParseIntError> {
 
 pub type SpanId = u64;
 
+#[derive(Debug, Clone)]
 pub struct TraceId {
     pub low: u64,
     pub high: u64,
@@ -34,22 +35,36 @@ pub struct TraceId {
 impl TraceId {
     fn to_hex_string(&self) -> String {
         if self.high > 0 {
-            format!("{:x}{:x}", self.low, self.high)
+            format!("{:x}{:016x}", self.high, self.low)
         } else {
             format!("{:x}", self.low)
         }
     }
 }
 
+#[derive(Debug)]
+pub enum TraceIdParseError {
+    ParseIntError(ParseIntError),
+    TooLong,
+}
+
+impl From<ParseIntError> for TraceIdParseError {
+    fn from(error: ParseIntError) -> Self {
+        TraceIdParseError::ParseIntError(error)
+    }
+}
+
 impl TryFrom<&String> for TraceId {
-    type Error = ParseIntError;
+    type Error = TraceIdParseError;
 
     fn try_from(value: &String) -> Result<Self, Self::Error> {
-        if value.len() > 16 {
+        if value.len() > 32 {
+            return Err(TraceIdParseError::TooLong);
+        } else if value.len() > 16 {
             let high_length = value.len() - 16;
-            let high = convert_hex_to_u64(value[0..high_length].as_ref())?;
-            let low = convert_hex_to_u64(value[high_length..].as_ref())?;
-
+            let (high_string, low_string) = value.split_at(high_length);
+            let high = convert_hex_to_u64(high_string.as_ref())?;
+            let low = convert_hex_to_u64(low_string.as_ref())?;
             Ok(Self { low, high })
         } else {
             let low = convert_hex_to_u64(value.as_ref())?;
@@ -69,7 +84,7 @@ impl SpanContext {
 
         span_context.set_trace_id(TraceId {
             low: new_id,
-            high: 0,
+            high: Self::generate_id(),
         });
         span_context.set_span_id(new_id);
         span_context
@@ -145,7 +160,7 @@ impl SpanContext {
 
     fn generate_id() -> u64 {
         // TODO: Fix issue with generated IDs that are too large
-        u64::from(random::<u32>())
+        random::<u64>()
     }
 }
 

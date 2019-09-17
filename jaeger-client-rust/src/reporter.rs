@@ -269,7 +269,10 @@ impl<'a> Reporter<'a> for RemoteReporter {
     fn report(&self, span: &Self::Span) {
         trace!("Reporting span: {:?}", span.context());
 
-        let trace_id = span.context().trace_id().unwrap_or(TraceId{low: 0, high: 0});
+        let trace_id = span
+            .context()
+            .trace_id()
+            .unwrap_or(TraceId { low: 0, high: 0 });
 
         let tags: Vec<Tag> = span
             .tags
@@ -287,7 +290,8 @@ impl<'a> Reporter<'a> for RemoteReporter {
                         .flat_map(|(key, value)| thrift_tag_from(key, value))
                         .collect(),
                 )
-            }).collect();
+            })
+            .collect();
 
         let span = JaegerThriftSpan::new(
             trace_id.low as i64,
