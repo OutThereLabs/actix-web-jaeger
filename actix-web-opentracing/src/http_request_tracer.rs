@@ -226,12 +226,11 @@ where
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         trace!("Polling for body");
 
-        let finished_span = self.span.finish();
-
         match self.fut.poll() {
             Ok(state) => match state {
                 Async::Ready(result) => Ok(Async::Ready(result.map_body(move |_, body| {
                     trace!("Got body, finishing span");
+                    let finished_span = self.span.finish();
 
                     ResponseBody::Body(TracedBody {
                         body,
