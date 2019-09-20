@@ -123,15 +123,16 @@ impl SpanContext {
             .insert("x-b3-parentspanid".into(), format!("{:x}", value));
     }
 
-    pub fn flags(&self) -> Option<u64> {
+    pub fn sampled(&self) -> Option<bool> {
         self.baggage
-            .get("x-b3-flags")
-            .and_then(|hex_string| SpanId::from_str_radix(hex_string.as_str(), 16).ok())
+            .get("x-b3-sampled")
+            .and_then(|hex_string| i32::from_str_radix(hex_string.as_str(), 16).ok())
+            .map(|value| value > 0)
     }
 
-    pub fn set_flags(&mut self, value: u64) {
+    pub fn set_sampled(&mut self, value: bool) {
         self.baggage
-            .insert("x-b3-flags".into(), format!("{:x}", value));
+            .insert("x-b3-sampled".into(), format!("{:x}", value as i32));
     }
 
     pub fn child(parent: Option<&SpanContext>) -> Self {
@@ -146,8 +147,8 @@ impl SpanContext {
                 child.set_parent_span_id(parent_span_id);
             }
 
-            if let Some(parent_flags) = parent.flags() {
-                child.set_flags(parent_flags);
+            if let Some(parent_sampled) = parent.sampled() {
+                child.set_sampled(parent_sampled);
             }
         }
 

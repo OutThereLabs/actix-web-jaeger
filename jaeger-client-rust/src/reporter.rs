@@ -267,19 +267,14 @@ impl<'a> Reporter<'a> for RemoteReporter {
     type Span = Span;
 
     fn report(&self, span: &Self::Span) {
-        let reporting_flagged = span.context.flags().map(|flags| (flags & (1 << 0)) != 0).unwrap_or(false);
-        let debug_flagged = span.context.flags().map(|flags| (flags & (1 << 1)) != 0).unwrap_or(false);
+        let sampled = span.context.sampled().unwrap_or(false);
 
-        if !reporting_flagged {
+        if !sampled {
             trace!("Not reporting span: {:?}", span.context());
             return;
         }
 
-        if debug_flagged {
-            debug!("Reporting span: {:?}", span.context());
-        } else {
-            trace!("Reporting span: {:?}", span.context());            
-        }
+        trace!("Reporting span: {:?}", span.context());            
 
         let trace_id = span
             .context()
@@ -319,7 +314,7 @@ impl<'a> Reporter<'a> for RemoteReporter {
                     span_id as i64,
                 )]
             }),
-            span.context().flags().unwrap_or(0) as i32,
+            span.context().sampled().unwrap_or(false) as i32,
             span.start_time as i64,
             span.duration as i64,
             tags,
