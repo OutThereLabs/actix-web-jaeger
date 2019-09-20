@@ -189,10 +189,20 @@ where
 
         let context = <ServiceRequest as TracedRequest<T>>::parent_span_context(&req);
 
-        let span = Rc::new(
-            self.tracer
-                .start_span("HTTP (GET)".to_owned(), context.as_ref()),
-        );
+        let span = match req.extensions().get::<Rc<T::Span>>() {
+            Some(span) => span.clone(),
+            None => {
+                let mut span = self
+                    .tracer
+                    .start_span(format!("HTTP ({})", req.method()), context.as_ref());
+
+                span.set_tag("http.uri", TagValue::String(format!("{}", req.uri())));
+                span.set_tag("http.method", TagValue::String(req.method().to_string()));
+
+                let span = Rc::new(span);
+                span
+            }
+        };
 
         req.extensions_mut().insert(span.clone());
 
