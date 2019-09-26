@@ -306,7 +306,9 @@ impl<'a> OpentracingSpan<'a> for Span {
     fn finish_at(&self, timestamp: u64) -> FinishedSpan<SpanContext> {
         if let Some(reporter) = self.reporter.upgrade() {
             let mut span_to_report = self.clone();
-            span_to_report.duration = timestamp - span_to_report.start_time;
+            if (timestamp > span_to_report.start_time) {
+                span_to_report.duration = timestamp - span_to_report.start_time;
+            }
             reporter.report(&span_to_report);
         }
         FinishedSpan::new(self.context.clone())
